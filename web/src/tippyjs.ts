@@ -324,6 +324,7 @@ export function initialize(): void {
             "#scroll-to-bottom-button-clickable-area",
             ".spectator_narrow_login_button",
             "#stream-specific-notify-table .unmute_stream",
+            "#stream-specific-notify-table .reset_stream_notifications",
             "#add_streams_tooltip",
             "#filter_streams_tooltip",
             ".error-icon-message-recipient .zulip-icon",
