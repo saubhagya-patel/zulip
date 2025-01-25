@@ -19,6 +19,7 @@ from zerver.lib.narrow import (
 from zerver.lib.response import json_success
 from zerver.lib.typed_endpoint import typed_endpoint
 from zerver.models import UserProfile
+from zerver.models.realms import MessageEditHistoryVisibilityEnum
 
 # Maximum number of messages that can be summarized in a single request.
 MAX_MESSAGES_SUMMARIZED = 100
@@ -116,7 +117,7 @@ def get_messages_summary(
         client_gravatar=True,
         allow_empty_topic_name=False,
         # Avoid fetching edit history, which won't be passed to the model.
-        allow_edit_history=False,
+        message_edit_history_visibility=MessageEditHistoryVisibilityEnum.MESSAGE_EDIT_HISTORY_VISIBILITY_NONE,
         user_profile=user_profile,
         realm=user_profile.realm,
     )
