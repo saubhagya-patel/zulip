@@ -13,6 +13,7 @@ from zerver.lib.narrow import (
     fetch_messages,
 )
 from zerver.models import UserProfile
+from zerver.models.realms import MessageEditHistoryVisibilityEnum
 
 # Maximum number of messages that can be summarized in a single request.
 MAX_MESSAGES_SUMMARIZED = 100
@@ -105,7 +106,7 @@ def do_summarize_narrow(
         client_gravatar=True,
         allow_empty_topic_name=False,
         # Avoid fetching edit history, which won't be passed to the model.
-        allow_edit_history=False,
+        message_edit_history_visibility=MessageEditHistoryVisibilityEnum.MESSAGE_EDIT_HISTORY_VISIBILITY_NONE,
         user_profile=user_profile,
         realm=user_profile.realm,
     )
