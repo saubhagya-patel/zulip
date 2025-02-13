@@ -154,6 +154,7 @@ class HomeTest(ZulipTestCase):
         "realm_default_language",
         "realm_default_stream_groups",
         "realm_default_streams",
+        "realm_default_welcome_bot_custom_message",
         "realm_description",
         "realm_digest_emails_enabled",
         "realm_digest_weekday",

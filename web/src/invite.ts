@@ -44,23 +44,28 @@ let stream_pill_widget: stream_pill.StreamPillWidget;
 let user_group_pill_widget: user_group_pill.UserGroupPillWidget;
 let guest_invite_stream_ids: number[] = [];
 
+type CommonInvitationData = {
+    csrfmiddlewaretoken: string;
+    invite_as: number;
+    notify_referrer_on_join: boolean;
+    stream_ids: string;
+    group_ids: string;
+    invite_expires_in_minutes: string;
+    invitee_emails: string;
+    include_realm_default_subscriptions: string;
+    welcome_bot_custom_message?: string;
+};
+
 function reset_error_messages(): void {
     $("#dialog_error").hide().text("").removeClass(common.status_classes);
+    $("#welcome_bot_custom_message_status").hide().text("").removeClass(common.status_classes);
 
     if (page_params.development_environment) {
         $("#dev_env_msg").hide().text("").removeClass(common.status_classes);
     }
 }
 
-function get_common_invitation_data(): {
-    csrfmiddlewaretoken: string;
-    invite_as: number;
-    notify_referrer_on_join: boolean;
-    stream_ids: string;
-    invite_expires_in_minutes: string;
-    invitee_emails: string;
-    include_realm_default_subscriptions: string;
-} {
+function get_common_invitation_data(): CommonInvitationData {
     const invite_as = Number.parseInt(
         $<HTMLSelectOneElement>("select:not([multiple])#invite_as").val()!,
         10,
@@ -93,7 +98,7 @@ function get_common_invitation_data(): {
     }
 
     assert(csrf_token !== undefined);
-    const data = {
+    const data: CommonInvitationData = {
         csrfmiddlewaretoken: csrf_token,
         invite_as,
         notify_referrer_on_join,
@@ -113,6 +118,13 @@ function get_common_invitation_data(): {
         } else {
             data.invitee_emails += "," + current_email;
         }
+    }
+    if ($("#should_send_welcome_bot_custom_message").prop("checked")) {
+        const welcome_bot_custom_message = $<HTMLTextAreaElement>("#welcome_bot_custom_message")
+            .val()!
+            .trim();
+        assert(welcome_bot_custom_message.length > 0);
+        data.welcome_bot_custom_message = welcome_bot_custom_message;
     }
     return data;
 }
@@ -302,6 +314,116 @@ function set_streams_to_join_list_visibility(): void {
     }
 }
 
+function set_welcome_bot_custom_message_visibility(): void {
+    if (!current_user.is_admin) {
+        return;
+    }
+
+    const should_send_welcome_bot_custom_message = util.the(
+        $<HTMLInputElement>("input#should_send_welcome_bot_custom_message"),
+    ).checked;
+    if (should_send_welcome_bot_custom_message) {
+        $("#welcome_bot_custom_message_container").show();
+    } else {
+        $("#welcome_bot_custom_message_container").hide();
+    }
+}
+
+function validate_and_get_welcome_bot_custom_message(): string | null {
+    const welcome_bot_custom_message = $<HTMLTextAreaElement>("#welcome_bot_custom_message")
+        .val()!
+        .trim();
+
+    if (welcome_bot_custom_message === "") {
+        ui_report.client_error(
+            $t_html({
+                defaultMessage: "Failed: Welcome Bot custom message is required!",
+            }),
+            $("#welcome_bot_custom_message_status"),
+        );
+        util.the($("#welcome_bot_custom_message_status")).scrollIntoView();
+        return null;
+    }
+
+    return welcome_bot_custom_message;
+}
+
+function send_test_welcome_bot_custom_message(): void {
+    const $welcome_bot_custom_message_status = $("#welcome_bot_custom_message_status");
+    $welcome_bot_custom_message_status.hide();
+    const welcome_bot_custom_message = validate_and_get_welcome_bot_custom_message();
+    if (welcome_bot_custom_message === null) {
+        return;
+    }
+
+    channel.post({
+        url: "/json/realm/test_welcome_bot_custom_message",
+        data: {
+            welcome_bot_custom_message,
+        },
+        success() {
+            ui_report.success(
+                $t_html({defaultMessage: "Welcome Bot custom message sent successfully!"}),
+                $welcome_bot_custom_message_status,
+            );
+        },
+        error(xhr) {
+            ui_report.error(
+                $t_html({defaultMessage: "Error sending custom welcome message!"}),
+                xhr,
+                $welcome_bot_custom_message_status,
+            );
+        },
+        complete() {
+            util.the($welcome_bot_custom_message_status).scrollIntoView();
+        },
+    });
+}
+
+function save_default_welcome_bot_custom_message(): void {
+    const $welcome_bot_custom_message_status = $("#welcome_bot_custom_message_status");
+    $welcome_bot_custom_message_status.hide();
+
+    const default_welcome_bot_custom_message = validate_and_get_welcome_bot_custom_message();
+    if (default_welcome_bot_custom_message === null) {
+        return;
+    }
+
+    if (default_welcome_bot_custom_message === realm.realm_default_welcome_bot_custom_message) {
+        ui_report.client_error(
+            $t_html({
+                defaultMessage: "Failed: Welcome Bot custom message is same as default!",
+            }),
+            $("#welcome_bot_custom_message_status"),
+        );
+        util.the($welcome_bot_custom_message_status).scrollIntoView();
+        return;
+    }
+
+    channel.patch({
+        url: "/json/realm",
+        data: {
+            default_welcome_bot_custom_message,
+        },
+        success() {
+            ui_report.success(
+                $t_html({defaultMessage: "Default Welcome Bot custom message saved successfully!"}),
+                $welcome_bot_custom_message_status,
+            );
+        },
+        error(xhr) {
+            ui_report.error(
+                $t_html({defaultMessage: "Error saving default Welcome Bot custom message!"}),
+                xhr,
+                $welcome_bot_custom_message_status,
+            );
+        },
+        complete() {
+            util.the($welcome_bot_custom_message_status).scrollIntoView();
+        },
+    });
+}
+
 function update_guest_visible_users_count_and_stream_ids(): void {
     const invite_as = Number.parseInt(
         $<HTMLSelectOneElement>("select:not([multiple])#invite_as").val()!,
@@ -386,6 +508,7 @@ function open_invite_user_modal(e: JQuery.ClickEvent<Document, undefined>): void
         time_choices: settings_config.custom_time_unit_values,
         show_select_default_streams_option: stream_data.get_default_stream_ids().length > 0,
         user_has_email_set: !settings_data.user_email_not_configured(),
+        default_welcome_bot_custom_message: realm.realm_default_welcome_bot_custom_message,
     });
 
     function invite_user_modal_post_render(): void {
@@ -411,6 +534,7 @@ function open_invite_user_modal(e: JQuery.ClickEvent<Document, undefined>): void
         settings_components.set_time_input_formatted_text($expires_in, valid_to_text);
 
         set_streams_to_join_list_visibility();
+        set_welcome_bot_custom_message_visibility();
         const $stream_pill_container = $("#invite_streams_container .pill-container");
         stream_pill_widget = invite_stream_picker_pill.create($stream_pill_container);
 
@@ -448,13 +572,21 @@ function open_invite_user_modal(e: JQuery.ClickEvent<Document, undefined>): void
                 custom_expiration_time_input,
                 false,
             );
+            let valid_welcome_bot_custom_message = false;
+            if (!$("#should_send_welcome_bot_custom_message").prop("checked")) {
+                valid_welcome_bot_custom_message = true;
+            } else {
+                valid_welcome_bot_custom_message =
+                    $<HTMLTextAreaElement>("#welcome_bot_custom_message").val()!.trim().length > 0;
+            }
             const $button = $("#invite-user-modal .dialog_submit_button");
             $button.prop(
                 "disabled",
                 (selected_tab === "invite-email-tab" &&
                     pills.items().length === 0 &&
                     email_pill.get_current_email(pills) === null) ||
-                    ($expires_in.val() === "custom" && !valid_custom_time),
+                    ($expires_in.val() === "custom" && !valid_custom_time) ||
+                    !valid_welcome_bot_custom_message,
             );
             if (selected_tab === "invite-email-tab") {
                 $button.text($t({defaultMessage: "Invite"}));
@@ -514,6 +646,25 @@ function open_invite_user_modal(e: JQuery.ClickEvent<Document, undefined>): void
 
         $("#invite_select_default_streams").on("change", () => {
             set_streams_to_join_list_visibility();
+        });
+
+        $("#should_send_welcome_bot_custom_message").on("change", () => {
+            set_welcome_bot_custom_message_visibility();
+            toggle_invite_submit_button();
+        });
+
+        $("#welcome_bot_custom_message").on("input", () => {
+            toggle_invite_submit_button();
+        });
+
+        $("#send_test_welcome_bot_custom_message").on("click", (e) => {
+            e.preventDefault();
+            send_test_welcome_bot_custom_message();
+        });
+
+        $("#save_default_welcome_bot_custom_message").on("click", (e) => {
+            e.preventDefault();
+            save_default_welcome_bot_custom_message();
         });
 
         if (!user_has_email_set) {

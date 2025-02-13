@@ -230,6 +230,7 @@ export function dispatch_normal_event(event) {
                 create_multiuse_invite_group: noop,
                 default_code_block_language: noop,
                 default_language: noop,
+                default_welcome_bot_custom_message: noop,
                 description: noop,
                 digest_emails_enabled: noop,
                 digest_weekday: noop,

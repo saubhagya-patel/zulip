@@ -1,5 +1,6 @@
 <form id="invite-user-form">
     <div class="setup-tips-container {{#unless is_admin}}hide{{/unless}}"></div>
+    <div class="alert" id="welcome_bot_custom_message_status"></div>
     {{#if development_environment}}
     <div class="alert" id="dev_env_msg"></div>
     {{/if}}
@@ -100,5 +101,21 @@
                 </div>
             </div>
         </div>
+    {{/if}}
+    {{#if is_admin}}
+    <div class="input-group">
+        <label class="checkbox display-block modal-field-label">
+            <input type="checkbox" id="should_send_welcome_bot_custom_message"/>
+            <span class="rendered-checkbox"></span>
+            {{t 'Send a custom Welcome Bot message'}}
+        </label>
+        <div id="welcome_bot_custom_message_container">
+            <textarea id="welcome_bot_custom_message" name="welcome_bot_custom_message" class="settings_textarea" maxlength="1000" rows="4">
+                {{~default_welcome_bot_custom_message~}}
+            </textarea>
+            {{> ./components/action-button type="quiet" intent="neutral" label=(t "Send me a test message") id="send_test_welcome_bot_custom_message"}}
+            {{> ./components/action-button type="quiet" intent="neutral" label=(t "Save as default message") id="save_default_welcome_bot_custom_message"}}
+        </div>
+    </div>
     {{/if}}
 </form>

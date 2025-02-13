@@ -322,6 +322,7 @@ export const realm_schema = z.object({
         }),
     ),
     realm_default_language: z.string(),
+    realm_default_welcome_bot_custom_message: z.string(),
     realm_description: z.string(),
     realm_digest_emails_enabled: z.boolean(),
     realm_digest_weekday: z.number(),

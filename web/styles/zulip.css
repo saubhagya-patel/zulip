@@ -1223,6 +1223,40 @@ div.toggle_resolve_topic_spinner .loading_indicator_spinner {
     width: 100%;
 }
 
+#welcome_bot_custom_message_container {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+
+    #welcome_bot_custom_message {
+        box-sizing: border-box;
+        margin-bottom: 10px;
+        width: 100%;
+    }
+
+    #send_test_welcome_bot_custom_message {
+        margin-right: auto;
+    }
+
+    #save_default_welcome_bot_custom_message {
+        margin-left: auto;
+    }
+
+    @media (width < $sm_min) {
+        flex-direction: column;
+
+        #send_test_welcome_bot_custom_message,
+        #save_default_welcome_bot_custom_message {
+            width: 100%;
+            margin: 10px 0;
+        }
+    }
+}
+
+#welcome_bot_custom_message_status {
+    margin-bottom: 20px;
+}
+
 .custom-time-input-value {
     width: 5ch;
     margin-right: 15px;
