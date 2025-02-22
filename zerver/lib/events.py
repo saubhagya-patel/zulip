@@ -97,6 +97,7 @@ from zerver.models.linkifiers import linkifiers_for_realm
 from zerver.models.realm_emoji import get_all_custom_emoji_for_realm
 from zerver.models.realm_playgrounds import get_realm_playgrounds
 from zerver.models.realms import (
+    MessageEditHistoryVisibilityPolicyEnum,
     get_corresponding_policy_value_for_group_setting,
     get_realm_domains,
     get_realm_with_settings,
@@ -489,6 +490,12 @@ def fetch_initial_state_data(
         )
 
         state["realm_empty_topic_display_name"] = Message.EMPTY_TOPIC_FALLBACK_NAME
+
+        state["realm_allow_edit_history"] = (
+            realm.message_edit_history_visibility_policy
+            != MessageEditHistoryVisibilityPolicyEnum.none.value
+        )
+
     if want("realm_user_settings_defaults"):
         realm_user_default = RealmUserDefault.objects.get(realm=realm)
         state["realm_user_settings_defaults"] = {}
@@ -1324,6 +1331,12 @@ def apply_event(
                     state["realm_jitsi_server_url"]
                     if state["realm_jitsi_server_url"] is not None
                     else state["server_jitsi_server_url"]
+                )
+
+            if field == "realm_message_edit_history_visibility_policy":
+                state["realm_allow_edit_history"] = (
+                    user_profile.realm.message_edit_history_visibility_policy
+                    != MessageEditHistoryVisibilityPolicyEnum.none.value
                 )
 
         elif event["op"] == "update_dict":

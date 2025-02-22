@@ -2,6 +2,7 @@ import datetime
 import logging
 import zoneinfo
 from email.headerregistry import Address
+from enum import Enum
 from typing import Any, Literal
 
 from django.conf import settings
@@ -57,17 +58,22 @@ from zerver.tornado.django_api import send_event_on_commit
 
 @transaction.atomic(savepoint=False)
 def do_set_realm_property(
-    realm: Realm, name: str, value: Any, *, acting_user: UserProfile | None
+    realm: Realm, name: str, raw_value: Any, *, acting_user: UserProfile | None
 ) -> None:
     """Takes in a realm object, the name of an attribute to update, the
     value to update and the user who initiated the update.
     """
     property_type = Realm.property_types[name]
-    assert isinstance(value, property_type), (
-        f"Cannot update {name}: {value} is not an instance of {property_type}"
+    assert isinstance(raw_value, property_type), (
+        f"Cannot update {name}: {raw_value} is not an instance of {property_type}"
     )
 
     old_value = getattr(realm, name)
+    if isinstance(raw_value, Enum):
+        value = raw_value.value
+    else:
+        value = raw_value
+
     if old_value == value:
         return
 
