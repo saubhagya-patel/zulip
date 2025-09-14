@@ -442,6 +442,43 @@ export function initialize(): void {
     });
 
     tippy.delegate("body", {
+        // Tooltip in general channel settings for protected history option.
+        target: ".settings-radio-input-parent.can_create_topic_group_tooltip",
+        content: $t({
+            defaultMessage:
+                "You must allow everyone to start new topics in this channel in order to turn on protected history.",
+        }),
+        appendTo: () => document.body,
+        onHidden(instance) {
+            instance.destroy();
+        },
+    });
+
+    tippy.delegate("body", {
+        // Tooltip in Advanced configurations panel (existing channel) of channel settings.
+        target: "#id_can_create_topic_group.can_create_topic_group_tooltip",
+        content: $t({
+            defaultMessage: "Everyone can start topics in channels with protected history.",
+        }),
+        appendTo: () => document.body,
+        onHidden(instance) {
+            instance.destroy();
+        },
+    });
+
+    tippy.delegate("body", {
+        // Tooltip in Advanced configurations panel (creating a new channel) of channel settings.
+        target: "#id_new_can_create_topic_group.can_create_topic_group_tooltip",
+        content: $t({
+            defaultMessage: "Everyone can start topics in channels with protected history.",
+        }),
+        appendTo: () => document.body,
+        onHidden(instance) {
+            instance.destroy();
+        },
+    });
+
+    tippy.delegate("body", {
         target: [
             "[data-tab-key='not-subscribed'].disabled",
             "[data-tab-key='all-streams'].disabled",
